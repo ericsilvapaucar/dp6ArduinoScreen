@@ -1,0 +1,41 @@
+/**
+ * @file lv_app.h
+ *
+ */
+
+#ifndef LV_APP_H
+#define LV_APP_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*********************
+ *      INCLUDES
+ *********************/
+#include "../lv_demos.h"
+
+/*********************
+ *      DEFINES
+ *********************/
+
+/**********************
+ *      TYPEDEFS
+ **********************/
+
+/**********************
+ * GLOBAL PROTOTYPES
+ **********************/
+void lv_app(void);
+void lv_app_close(void);
+void lv_app_update_counter(int counter);
+
+/**********************
+ *      MACROS
+ **********************/
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /*LV_DEMO_WIDGETS_H*/
