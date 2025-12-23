@@ -57,7 +57,14 @@ void setup()
 
     sensor_init();
 
+    lv_timer_create(lv_refresh_timer_cb, 500, NULL);
+
     Serial.println(title + " end");
 }
 
-void loop() {}
+void loop() {
+
+    lv_timer_handler();
+    delay(5);
+
+}

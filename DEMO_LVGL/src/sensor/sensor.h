@@ -1,9 +1,16 @@
+/**
+ * @file sensor.h
+ * 
+ */
+
 #ifndef SENSOR_H
 #define SENSOR_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern volatile int s_contador_datos;
 
 void sensor_init(void);
 

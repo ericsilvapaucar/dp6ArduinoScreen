@@ -5,12 +5,11 @@
 
 #define SENSOR_RETRY_DELAY_MS 500
 
+volatile int s_contador_datos = 0;
 extern QueueHandle_t sensor_cmd_queue;
 SemaphoreHandle_t lvgl_mutex;
 
 static const char *TAG = "sensor";
-
-static int s_contador_datos = 0;
 
 void _sensor_process_data(void* parameter);
 
@@ -39,13 +38,7 @@ void _sensor_process_data(void* parameter) {
             }
         }
 
-        if (xSemaphoreTake(lvgl_mutex, portMAX_DELAY) == pdTRUE) {
-
-            s_contador_datos++;
-            lv_app_update_counter(s_contador_datos);
-            
-            xSemaphoreGive(lvgl_mutex);
-        }
+        s_contador_datos++;
 
         vTaskDelay(pdMS_TO_TICKS(1000)); // Esperar 1 seg
     }

@@ -2,12 +2,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 
-#if LV_USE_DEMO_WIDGETS
 
 #if LV_MEM_CUSTOM == 0 && LV_MEM_SIZE < (38ul * 1024ul)
     #error Insufficient memory for lv_demo_widgets. Please set LV_MEM_SIZE to at least 38KB (38ul * 1024ul).  48KB is recommended.
 #endif
 
+#define ANIMATION_TIME 300
+
+extern volatile int s_contador_datos;
 extern QueueHandle_t sensor_cmd_queue;
 
 static lv_obj_t* s_lbl_counter;
@@ -16,20 +18,36 @@ static lv_obj_t* _success_screen;
 
 static lv_obj_t* _main_screen;
 
-
+static void go_to_success(void);
 static void success_create(void);
-static lv_obj_t* main_create(lv_obj_t* parent);
+
+static void go_to_main(void);
+static void main_create(void);
+
 static void event_handler(lv_event_t * e);
 static void event_success_handler(lv_event_t * e);
 static void event_back_handler(lv_event_t * e);
 
 void lv_app(void) {
-    main_create(lv_scr_act());
+    main_create();
+    lv_scr_load(_main_screen);
 }
 
-static lv_obj_t* main_create(lv_obj_t * parent) {
+static void go_to_main(void) {
+    lv_scr_load_anim(_main_screen, LV_SCR_LOAD_ANIM_MOVE_RIGHT, ANIMATION_TIME, 0, false);
+}
 
-    lv_obj_t * container = lv_obj_create(parent);
+static void go_to_success(void) {
+    if (_success_screen == NULL) {
+        success_create();
+    }
+    lv_scr_load_anim(_success_screen, LV_SCR_LOAD_ANIM_MOVE_LEFT, ANIMATION_TIME, 0, false);
+}
+
+static void main_create(void) {
+    _main_screen = lv_obj_create(NULL);
+
+    lv_obj_t * container = lv_obj_create(_main_screen);
     lv_obj_set_height(container, LV_SIZE_CONTENT);
     lv_obj_set_width(container, LV_SIZE_CONTENT);
     lv_obj_set_layout(container, LV_LAYOUT_FLEX);
@@ -94,28 +112,23 @@ static lv_obj_t* main_create(lv_obj_t * parent) {
     lv_label_set_text(label, "Toggle");
     lv_obj_center(label);
 
-    return container;
+
 }
 
 static void success_create(void) {
 
-    if (_success_screen == NULL) {
-        _success_screen = lv_obj_create(NULL);
-        lv_obj_t * label = lv_label_create(_success_screen);
-        lv_label_set_text(label, "Pantalla de Ajustes");
-        lv_obj_align(label, LV_ALIGN_CENTER, 0, -40);
+    _success_screen = lv_obj_create(NULL);
+    lv_obj_t * label = lv_label_create(_success_screen);
+    lv_label_set_text(label, "Pantalla de Ajustes");
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, -40);
 
-        lv_obj_t * btn = lv_btn_create(_success_screen);
-        lv_obj_align(btn, LV_ALIGN_CENTER, 0, 40);
-        lv_obj_add_event_cb(btn, event_back_handler, LV_EVENT_ALL, NULL);
+    lv_obj_t * btn = lv_btn_create(_success_screen);
+    lv_obj_align(btn, LV_ALIGN_CENTER, 0, 40);
+    lv_obj_add_event_cb(btn, event_back_handler, LV_EVENT_ALL, NULL);
 
-        lv_obj_t * back_label = lv_label_create(btn);
-        lv_label_set_text(back_label, "Volver");
-        lv_obj_center(label);
-
-    }
-
-    lv_scr_load_anim(_success_screen, LV_SCR_LOAD_ANIM_MOVE_LEFT, 500, 0, true);
+    lv_obj_t * back_label = lv_label_create(btn);
+    lv_label_set_text(back_label, "Volver");
+    lv_obj_center(label);
 
 }
 
@@ -125,7 +138,7 @@ static void event_success_handler(lv_event_t * e) {
 
     if(code == LV_EVENT_CLICKED) {
         LV_LOG_USER("Clicked");
-        success_create();
+        go_to_success();
     }
 
 }
@@ -136,8 +149,7 @@ static void event_back_handler(lv_event_t * e) {
 
     if(code == LV_EVENT_CLICKED) {
         LV_LOG_USER("Clicked");
-        lv_obj_t * main_screen = main_create(NULL);
-        lv_scr_load(main_screen);
+        go_to_main();
     }
 
 }
@@ -169,4 +181,14 @@ static void event_handler(lv_event_t * e)
     }
 }
 
-#endif
+void lv_refresh_timer_cb(lv_timer_t * t) {
+
+    static int ultimo_valor_mostrado = -1;
+
+    if (s_contador_datos != ultimo_valor_mostrado) {
+        ultimo_valor_mostrado = s_contador_datos;
+        LV_LOG_USER("Timer %d", s_contador_datos);
+        lv_label_set_text_fmt(s_lbl_counter, "%d", s_contador_datos);
+    }
+
+}

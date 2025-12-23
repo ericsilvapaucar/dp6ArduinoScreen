@@ -29,6 +29,7 @@ extern "C" {
 void lv_app(void);
 void lv_app_close(void);
 void lv_app_update_counter(int counter);
+void lv_refresh_timer_cb(lv_timer_t * t);
 
 /**********************
  *      MACROS
