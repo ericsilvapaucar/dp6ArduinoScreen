@@ -1,10 +1,7 @@
 
 #include <Arduino.h>
 #include <lvgl.h>
-#include "display.h"
-#include "esp_bsp.h"
-#include "lv_port.h"
-#include "src/sensor/sensor.h"
+#include "src/app.h"
 
 /**
  * Set the rotation degree:
@@ -15,8 +12,6 @@
  *
  */
 #define LVGL_PORT_ROTATION_DEGREE               (90)
-
-#include <src/demos/lv_demos.h>
 
 QueueHandle_t sensor_cmd_queue;
 

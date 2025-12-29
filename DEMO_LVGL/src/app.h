@@ -3,8 +3,12 @@
  *
  */
 
-#ifndef LV_DEMOS_H
-#define LV_DEMOS_H
+#ifndef APP_H
+#define APP_H
+
+#include "drivers/display.h"
+#include "drivers/esp_bsp.h"
+#include "drivers/lv_port.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,28 +17,9 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-#include <lvgl.h>
 
-#if LV_USE_DEMO_WIDGETS
-// #include "widgets/lv_demo_widgets.h"
+#include "sensor/sensor.h"
 #include "app/lv_app.h"
-#endif
-
-#if LV_USE_DEMO_BENCHMARK
-#include "benchmark/lv_demo_benchmark.h"
-#endif
-
-#if LV_USE_DEMO_STRESS
-#include "stress/lv_demo_stress.h"
-#endif
-
-#if LV_USE_DEMO_KEYPAD_AND_ENCODER
-#include "keypad_encoder/lv_demo_keypad_encoder.h"
-#endif
-
-#if LV_USE_DEMO_MUSIC
-#include "music/lv_demo_music.h"
-#endif
 
 /*********************
  *      DEFINES

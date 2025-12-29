@@ -1,5 +1,5 @@
 #include "sensor.h"
-#include <src/demos/lv_demos.h>
+#include <src/app.h>
 #include <Arduino.h>
 #include <freertos/semphr.h>
 
