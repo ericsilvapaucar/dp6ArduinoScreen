@@ -1,10 +1,11 @@
 
-#include <Arduino.h>
-#include <lvgl.h>
 #include "display.h"
 #include "esp_bsp.h"
 #include "lv_port.h"
 #include "src/sensor/sensor.h"
+#include <Arduino.h>
+#include <lvgl.h>
+
 
 /**
  * Set the rotation degree:
@@ -14,57 +15,55 @@
  *      - 270: 270 degree
  *
  */
-#define LVGL_PORT_ROTATION_DEGREE               (90)
+#define LVGL_PORT_ROTATION_DEGREE (90)
 
 #include <src/demos/lv_demos.h>
 
 QueueHandle_t sensor_cmd_queue;
 
-void setup()
-{
-    String title = "LVGL porting example";
+void setup() {
+  String title = "LVGL porting example";
 
-    Serial.begin(115200);
-    Serial.println(title + " start");
+  Serial.begin(115200);
+  Serial.println(title + " start");
 
-    Serial.println("Initialize panel device");
-    bsp_display_cfg_t cfg = {
-        .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
-        .buffer_size = EXAMPLE_LCD_QSPI_H_RES * EXAMPLE_LCD_QSPI_V_RES,
+  Serial.println("Initialize panel device");
+  bsp_display_cfg_t cfg = {
+      .lvgl_port_cfg = ESP_LVGL_PORT_INIT_CONFIG(),
+      .buffer_size = EXAMPLE_LCD_QSPI_H_RES * EXAMPLE_LCD_QSPI_V_RES,
 #if LVGL_PORT_ROTATION_DEGREE == 90
-        .rotate = LV_DISP_ROT_90,
+      .rotate = LV_DISPLAY_ROTATION_90,
 #elif LVGL_PORT_ROTATION_DEGREE == 270
-        .rotate = LV_DISP_ROT_270,
+      .rotate = LV_DISPLAY_ROTATION_270,
 #elif LVGL_PORT_ROTATION_DEGREE == 180
-        .rotate = LV_DISP_ROT_180,
+      .rotate = LV_DISPLAY_ROTATION_180,
 #elif LVGL_PORT_ROTATION_DEGREE == 0
-        .rotate = LV_DISP_ROT_NONE,
+      .rotate = LV_DISPLAY_ROTATION_0,
 #endif
-    };
-    sensor_cmd_queue = xQueueCreate(5, sizeof(int));
+  };
+  sensor_cmd_queue = xQueueCreate(5, sizeof(int));
 
-    bsp_display_start_with_config(&cfg);
-    bsp_display_backlight_on();
+  bsp_display_start_with_config(&cfg);
+  bsp_display_backlight_on();
 
-    Serial.println("Create UI");
-    /* Lock the mutex due to the LVGL APIs are not thread-safe */
-    bsp_display_lock(0);
+  Serial.println("Create UI");
+  /* Lock the mutex due to the LVGL APIs are not thread-safe */
+  bsp_display_lock(0);
 
-    lv_app();
+  lv_app();
 
-//     /* Release the mutex */
-    bsp_display_unlock();
+  //     /* Release the mutex */
+  bsp_display_unlock();
 
-    sensor_init();
+  sensor_init();
 
-    lv_timer_create(lv_refresh_timer_cb, 500, NULL);
+  lv_timer_create(lv_refresh_timer_cb, 500, NULL);
 
-    Serial.println(title + " end");
+  Serial.println(title + " end");
 }
 
 void loop() {
 
-    lv_timer_handler();
-    delay(5);
-
+  lv_timer_handler();
+  delay(5);
 }
