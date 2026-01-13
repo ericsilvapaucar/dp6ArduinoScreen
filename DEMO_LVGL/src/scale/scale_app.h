@@ -1,14 +1,10 @@
 /**
- * @file lv_demos.h
+ * @file lv_app.h
  *
  */
 
-#ifndef APP_H
-#define APP_H
-
-#include "drivers/display.h"
-#include "drivers/esp_bsp.h"
-#include "drivers/lv_port.h"
+#ifndef LV_APP_H
+#define LV_APP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +13,7 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-
-#include "scale/scale_app.h"
+#include <lvgl.h>
 
 /*********************
  *      DEFINES
@@ -31,6 +26,8 @@ extern "C" {
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
+void lv_scale_app(void);
+void lv_scale_app_close(void);
 
 /**********************
  *      MACROS
@@ -40,4 +37,4 @@ extern "C" {
 } /* extern "C" */
 #endif
 
-#endif /*LV_DEMO_H*/
+#endif /*LV_DEMO_WIDGETS_H*/

@@ -45,21 +45,21 @@ void setup()
     /* Lock the mutex due to the LVGL APIs are not thread-safe */
     bsp_display_lock(0);
 
-    lv_app();
+    lv_scale_app();
 
 //     /* Release the mutex */
     bsp_display_unlock();
 
-    sensor_init();
+//     sensor_init();
 
-    lv_timer_create(lv_refresh_timer_cb, 500, NULL);
+//     lv_timer_create(lv_refresh_timer_cb, 500, NULL);
 
     Serial.println(title + " end");
 }
 
 void loop() {
 
-    lv_timer_handler();
-    delay(5);
+//     lv_timer_handler();
+//     delay(5);
 
 }
