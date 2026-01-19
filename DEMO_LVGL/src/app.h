@@ -9,6 +9,7 @@
 #include "drivers/display.h"
 #include "drivers/esp_bsp.h"
 #include "drivers/lv_port.h"
+#include "scale/scale_app.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +18,6 @@ extern "C" {
 /*********************
  *      INCLUDES
  *********************/
-
-#include "scale/scale_app.h"
 
 /*********************
  *      DEFINES

@@ -1,6 +1,4 @@
 #include "sensor.h"
-#include <src/app.h>
-#include <Arduino.h>
 #include <freertos/semphr.h>
 
 #define SENSOR_RETRY_DELAY_MS 500
@@ -8,8 +6,6 @@
 volatile int s_contador_datos = 0;
 extern QueueHandle_t sensor_cmd_queue;
 SemaphoreHandle_t lvgl_mutex;
-
-static const char *TAG = "sensor";
 
 void _sensor_process_data(void* parameter);
 

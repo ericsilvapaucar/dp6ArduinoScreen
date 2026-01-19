@@ -1,7 +1,8 @@
 
 #include <Arduino.h>
-#include <lvgl.h>
 #include "src/app.h"
+#include "src/service/ble_connector.h"
+#include "src/application/app_manager.h"
 
 /**
  * Set the rotation degree:
@@ -12,6 +13,9 @@
  *
  */
 #define LVGL_PORT_ROTATION_DEGREE               (90)
+
+BLEConnector bleConnector;
+AppManager appManager(&bleConnector);
 
 QueueHandle_t sensor_cmd_queue;
 
@@ -50,9 +54,7 @@ void setup()
 //     /* Release the mutex */
     bsp_display_unlock();
 
-//     sensor_init();
-
-//     lv_timer_create(lv_refresh_timer_cb, 500, NULL);
+    appManager.initialize();
 
     Serial.println(title + " end");
 }

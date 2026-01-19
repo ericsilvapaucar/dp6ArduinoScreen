@@ -20,7 +20,7 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_log.h"
-#include "lvgl.h"
+#include <lvgl.h>
 #include "esp_rom_gpio.h"
 #include "esp_lcd_axs15231b.h"
 #include "bsp_err_check.h"

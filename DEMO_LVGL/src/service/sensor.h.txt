@@ -6,6 +6,8 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#include "../app.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

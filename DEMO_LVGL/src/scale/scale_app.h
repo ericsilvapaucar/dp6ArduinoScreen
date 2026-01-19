@@ -1,5 +1,5 @@
 /**
- * @file lv_app.h
+ * @file scale_app.h
  *
  */
 

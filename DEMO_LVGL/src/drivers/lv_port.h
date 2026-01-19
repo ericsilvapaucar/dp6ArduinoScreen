@@ -11,7 +11,7 @@
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_lcd_types.h"
-#include "lvgl.h"
+#include <lvgl.h>
 
 #if __has_include ("esp_lcd_touch.h")
 #include "esp_lcd_touch.h"
