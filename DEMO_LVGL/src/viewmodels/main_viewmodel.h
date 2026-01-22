@@ -7,34 +7,19 @@
 class MainViewModel
 {
 private:
-    SerialService* _serialService;
+    SerialService *_serialService;
     MainUiState _uiState;
     std::function<void(const MainUiState &)> _onStateChanged;
+    SemaphoreHandle_t _stateMutex; // Protección de datos
 
 public:
+    MainViewModel(SerialService *serialService);
+    ~MainViewModel();
 
-    MainViewModel(SerialService* serialService)
-     : _serialService(serialService) {}
-    
-
-    void bind(std::function<void(const MainUiState &)> observer)
-    {
-        _onStateChanged = observer;
-        _serialService->serial_service_setup();
-    }
-
-    void setDeviceConnected(bool isConnected)
-    {
-        _uiState.isDeviceConnected = isConnected;
-        notifyStateChanged();
-        
-    }
+    void bind(std::function<void(const MainUiState &)> observer);
+    void setDeviceConnected(bool isConnected);
 
 private:
-    void notifyStateChanged()
-    {
-        if (_onStateChanged) {
-            _onStateChanged(_uiState);
-        }
-    }
+    void _handleRawSerial(const SerialEvent &event);
+    void _notifyStateChanged();
 };

@@ -7,7 +7,6 @@ class MainScreen {
     private:
     MainViewModel* _viewModel;
     MainUiState _latestState;
-    lv_obj_t* _labelStatus;
 public:
     MainScreen(MainViewModel* viewModel) : _viewModel(viewModel) {}
 
