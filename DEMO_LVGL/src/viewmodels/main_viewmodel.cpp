@@ -42,6 +42,17 @@ void MainViewModel::_handleRawSerial(const SerialEvent &event)
         _notifyStateChanged();
     }
 }
+
+void MainViewModel::setConnectionState(ConnectionState state)
+{
+    if (xSemaphoreTake(_stateMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+    {
+        _uiState.connectionState = state;
+        xSemaphoreGive(_stateMutex);
+        _notifyStateChanged();
+    }
+}
+
 void MainViewModel::_notifyStateChanged()
 {
     if (_onStateChanged)

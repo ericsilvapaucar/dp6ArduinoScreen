@@ -1,9 +1,84 @@
 #include "main_screen.h"
 #include <lvgl.h>
 
-void MainScreen::bindViewModel()
+extern "C"
+{
+    LV_IMG_DECLARE(img_casamarket);
+    LV_IMG_DECLARE(icon_alert);
+    LV_IMG_DECLARE(icon_error);
+    LV_IMG_DECLARE(icon_check);
+}
+
+namespace
 {
 
+    lv_obj_t *_createSpinner(lv_obj_t *parent)
+    {
+        lv_obj_t *spinner = lv_spinner_create(parent, 1000, 60);
+        lv_obj_set_size(spinner, 50, 50);
+        lv_obj_center(spinner);
+        int width = 5;
+
+        // Aplicar al fondo (el círculo completo)
+        lv_obj_set_style_arc_width(spinner, width, LV_PART_MAIN);
+        // Aplicar al indicador (la parte que gira)
+        lv_obj_set_style_arc_width(spinner, width, LV_PART_INDICATOR);
+        lv_obj_set_style_arc_rounded(spinner, true, LV_PART_INDICATOR);
+
+        return spinner;
+    }
+
+    lv_obj_t *_createCheckIcon(lv_obj_t *parent)
+    {
+        lv_obj_t *checkIcon = lv_img_create(parent);
+        lv_img_set_src(checkIcon, &icon_check);
+        lv_obj_center(checkIcon);
+        return checkIcon;
+    }
+
+    lv_obj_t *_createErrorIcon(lv_obj_t *parent)
+    {
+        lv_obj_t *errorIcon = lv_img_create(parent);
+        lv_img_set_src(errorIcon, &icon_error);
+        lv_obj_center(errorIcon);
+        return errorIcon;
+    }
+
+    lv_obj_t *_createAlertIcon(lv_obj_t *parent)
+    {
+        lv_obj_t *alertIcon = lv_img_create(parent);
+        lv_img_set_src(alertIcon, &icon_alert);
+        lv_obj_center(alertIcon);
+        return alertIcon;
+    }
+
+    lv_obj_t *_createHeaderImage(lv_obj_t *parent)
+    {
+        lv_obj_t *image_logo = lv_img_create(parent);
+        lv_img_set_src(image_logo, &img_casamarket);
+        lv_obj_center(image_logo);
+        lv_obj_set_style_pad_bottom(image_logo, 24, LV_PART_MAIN);
+        return image_logo;
+    }
+
+    lv_obj_t *_createFooterLabel(lv_obj_t *parent)
+    {
+        lv_obj_t* labelStatus = lv_label_create(parent);
+        lv_label_set_text(labelStatus, "Esperando conexion...");
+        lv_obj_align(labelStatus, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_set_style_pad_top(labelStatus, 8, LV_PART_MAIN);
+        return labelStatus;
+    }
+}
+
+void MainScreen::init()
+{
+    setupUI();
+    bindViewModel();
+}
+
+void MainScreen::bindViewModel()
+{
     LV_LOG_USER("bindViewModel");
     _viewModel->bind([this](const MainUiState &state)
                      {
@@ -38,7 +113,7 @@ void MainScreen::setupUI()
     lv_disp_set_theme(dispi, th);
 
     // Obtener la pantalla activa
-    lv_obj_t * screen = lv_scr_act();
+    lv_obj_t *screen = lv_scr_act();
 
     // Establecer el color (Ejemplo: Gris oscuro)
     lv_obj_set_style_bg_color(screen, lv_color_hex(0xFFFF00), LV_PART_MAIN);
@@ -63,52 +138,77 @@ void MainScreen::setupUI()
     lv_obj_set_style_pad_all(container, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(container, 0, LV_PART_MAIN);
 
-    lv_obj_t *image_logo = lv_img_create(container);
-
-    LV_IMG_DECLARE(img_casamarket);
-    lv_img_set_src(image_logo, &img_casamarket);
-    lv_obj_center(image_logo);
+    _createHeaderImage(container);
 
     /*Create a spinner*/
-    lv_obj_t *spinner = lv_spinner_create(container, 1000, 60);
-    lv_obj_set_size(spinner, 50, 50);
-    lv_obj_center(spinner);
-    int width = 5;
+    _spinnerLoading = _createSpinner(container);
 
-    // Aplicar al fondo (el círculo completo)
-    lv_obj_set_style_arc_width(spinner, width, LV_PART_MAIN);
-    // Aplicar al indicador (la parte que gira)
-    lv_obj_set_style_arc_width(spinner, width, LV_PART_INDICATOR);
-    lv_obj_set_style_arc_rounded(spinner, true, LV_PART_INDICATOR);
-    lv_obj_set_style_pad_top(spinner, 20, LV_PART_MAIN);
+    _iconCheck = _createCheckIcon(container);
+    lv_obj_add_flag(_iconCheck, LV_OBJ_FLAG_HIDDEN);
 
-    lv_obj_t * labelStatus = lv_label_create(container);
-    lv_label_set_text(labelStatus, "Esperando conexion...");
-    lv_obj_align(labelStatus, LV_ALIGN_CENTER, 0, 0);
+    // _createAlertIcon(container);
+    // _createErrorIcon(container);
+
+    _labelStatus = _createFooterLabel(container);
+
+    // Button go to success
+    lv_obj_t * label;
+
+    lv_obj_t * btn = lv_btn_create(container);
+    lv_obj_add_event_cb(btn, event_success_handler, LV_EVENT_ALL, this);
+
+    label = lv_label_create(btn);
+    lv_label_set_text(label, "Go to Success");
+    lv_obj_center(label);
 
     lv_scr_load(root);
 }
 
 void MainScreen::event_success_handler(lv_event_t *e)
 {
-    // lv_event_code_t code = lv_event_get_code(e);
+    lv_event_code_t code = lv_event_get_code(e);
 
-    // if (code == LV_EVENT_CLICKED)
-    // {
-    //     // Recuperamos la instancia de la pantalla
-    //     MainScreen *self = static_cast<MainScreen *>(lv_event_get_user_data(e));
+    if (code == LV_EVENT_CLICKED)
+    {
+        // Recuperamos la instancia de la pantalla
+        MainScreen *self = static_cast<MainScreen *>(lv_event_get_user_data(e));
 
-    //     if (self != nullptr && self->_viewModel != nullptr)
-    //     {
-    //         LV_LOG_USER("Botón presionado: invirtiendo estado de conexión");
+        if (self != nullptr && self->_viewModel != nullptr)
+        {
+            LV_LOG_USER("Botón presionado: invirtiendo estado de conexión");
 
-    //         // Usamos el estado actual para decidir el nuevo
-    //         bool currentStatus = self->_latestState.isDeviceConnected;
-    //         self->_viewModel->setDeviceConnected(!currentStatus);
-    //     }
-    // }
+            // Usamos el estado actual para decidir el nuevo
+            ConnectionState currentStatus = self->_latestState.connectionState;
+            switch (currentStatus)
+            {
+            case DISCONNECTED:
+                self->_viewModel->setConnectionState(CONNECTED);
+                break;
+            
+            case CONNECTED:
+                self->_viewModel->setConnectionState(DISCONNECTED);
+                break;
+            
+            }
+        }
+    }
 }
 
 void MainScreen::render(const MainUiState &state)
 {
+
+    switch (state.connectionState)
+    {
+    case DISCONNECTED:
+        lv_obj_clear_flag(_spinnerLoading, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(_iconCheck, LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(_labelStatus, "Esperando conexion...");
+        break;    
+    case CONNECTED:
+        lv_obj_add_flag(_spinnerLoading, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(_iconCheck, LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(_labelStatus, "Conexion establecida!");
+        break;
+    }
+
 }

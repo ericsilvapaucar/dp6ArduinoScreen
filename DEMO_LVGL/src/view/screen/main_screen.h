@@ -7,13 +7,12 @@ class MainScreen {
     private:
     MainViewModel* _viewModel;
     MainUiState _latestState;
+    lv_obj_t* _spinnerLoading;
+    lv_obj_t* _iconCheck;
+    lv_obj_t* _labelStatus;
 public:
     MainScreen(MainViewModel* viewModel) : _viewModel(viewModel) {}
-
-    void init() {
-        setupUI();
-        bindViewModel();
-    }
+    void init();
 private:
     void bindViewModel();
     void setupUI();
