@@ -18,7 +18,8 @@ extern "C" {
 #endif
 
 SerialService serialService;
-MainViewModel mainViewModel(&serialService);
+BLEConnector bleConnector;
+MainViewModel mainViewModel(&serialService, &bleConnector);
 MainScreen mainScreen(&mainViewModel);
 
 void init_app(void) {
