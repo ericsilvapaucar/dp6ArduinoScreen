@@ -4,6 +4,12 @@
 #include <vector>
 #include <cstdint>
 
+struct BluetoothResponse
+{
+    uint8_t data[512];
+    size_t len;
+};
+
 class IBluetoothConnector {
 public:
     virtual bool start() = 0;
@@ -11,10 +17,10 @@ public:
     virtual bool isConnected() = 0;
     
     // Callback para recibir datos
-    void setReceiveHandler(std::function<void(const std::vector<uint8_t>&)> handler) {
+    void setReceiveHandler(std::function<void(const BluetoothResponse&)> handler) {
         _onReceive = handler;
     }
 
 protected:
-    std::function<void(const std::vector<uint8_t>&)> _onReceive;
+    std::function<void(const BluetoothResponse&)> _onReceive;
 };

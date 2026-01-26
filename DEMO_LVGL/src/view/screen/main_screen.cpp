@@ -177,19 +177,7 @@ void MainScreen::event_success_handler(lv_event_t *e)
         {
             LV_LOG_USER("Botón presionado: invirtiendo estado de conexión");
 
-            // Usamos el estado actual para decidir el nuevo
-            ConnectionState currentStatus = self->_latestState.connectionState;
-            switch (currentStatus)
-            {
-            case DISCONNECTED:
-                self->_viewModel->setConnectionState(CONNECTED);
-                break;
-            
-            case CONNECTED:
-                self->_viewModel->setConnectionState(DISCONNECTED);
-                break;
-            
-            }
+            self->_viewModel->requestListProducts();
         }
     }
 }

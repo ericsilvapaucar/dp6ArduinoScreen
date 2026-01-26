@@ -2,13 +2,43 @@
 
 void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
 {
-    String value = pCharacteristic->getValue().c_str();
-    if (value.length() > 0)
-    {
-        // Aquí es donde la abstracción recibe los datos
-        // En un sistema real, podrías pasarlo a una cola de FreeRTOS
-        Serial.printf("Datos recibidos: %s\n", value.c_str());
+
+    Serial.println("Recibiendo datos por BLE");
+    uint8_t* packet = pCharacteristic->getData();
+    uint8_t length = pCharacteristic->getLength();
+
+    uint8_t chunkIdx = packet[0];
+    uint8_t totalChunks = packet[1];
+    uint8_t* payload = &packet[2];
+    size_t payloadLen = length - 2;
+
+    Serial.printf("Datos %d de %d recibidos, longitud del payload: %d\n", chunkIdx + 1, totalChunks, payloadLen);
+
+    if (chunkIdx == 0) bytesRecibidos = 0; // Reiniciar si es el primero
+
+    // Ir pegando en el buffer
+    memcpy(&bufferGlobal[bytesRecibidos], payload, payloadLen);
+    bytesRecibidos += payloadLen;
+
+    // ¿Ya llegó el último pedazo?
+    if (chunkIdx == totalChunks - 1) {
+        
+        Serial.println("Datos recibidos completamente por BLE.");
+
+        BluetoothResponse response;
+
+        response.len = payloadLen;
+
+        memcpy(response.data, packet, response.len);
+
+        if (_onReceive) {
+            _onReceive(response);
+        }
+
+    
     }
+
+
 }
 
 void BLEConnector::onConnect(BLEServer *pServer)
@@ -25,6 +55,8 @@ void BLEConnector::onDisconnect(BLEServer *pServer)
         _onConnectCallback(false);
     }
     Serial.println("Cliente BLE desconectado");
+    BLEDevice::startAdvertising();
+    
 }
 
 bool BLEConnector::start()

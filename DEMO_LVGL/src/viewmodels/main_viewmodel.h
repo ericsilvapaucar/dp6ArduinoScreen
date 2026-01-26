@@ -21,8 +21,10 @@ public:
     void bind(std::function<void(const MainUiState &)> observer);
     void setDeviceConnected(bool isConnected);
     void setConnectionState(ConnectionState state);
+    void requestListProducts();
 
 private:
     void _handleRawSerial(const SerialEvent &event);
     void _notifyStateChanged();
+    void _handleBluetoothData(const BluetoothResponse &response);
 };

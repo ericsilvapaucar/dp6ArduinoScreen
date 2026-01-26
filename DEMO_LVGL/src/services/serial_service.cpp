@@ -58,6 +58,8 @@ void SerialService::_serial_loop(void *arg)
                     self->_buffer[bytesRead++] = (uint8_t)byte;
                 }
 
+                vTaskDelay(pdMS_TO_TICKS(5));
+
             }
 
             // Procesar datos recibidos

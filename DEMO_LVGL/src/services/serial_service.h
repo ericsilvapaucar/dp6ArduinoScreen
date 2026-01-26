@@ -23,7 +23,7 @@ private:
 
 public:
     ~SerialService();
-    bool setup(std::function<void(const SerialEvent &)> callback);
+    bool setup(std::function<void(const SerialEvent&)> callback);
 
 private:
     static void _serial_loop(void *arg);
