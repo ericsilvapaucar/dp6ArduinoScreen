@@ -6,7 +6,5 @@ enum ConnectionState {
 };
 
 struct MainUiState {
-    bool isDeviceConnected = false;
-    char barcode[32];
     ConnectionState connectionState = DISCONNECTED;
 };

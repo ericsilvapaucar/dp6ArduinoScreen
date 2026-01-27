@@ -12,15 +12,17 @@
 #include "drivers/esp_bsp.h"
 #include "drivers/lv_port.h"
 #include "view/screen/main_screen.h"
+#include "view/screen/product_screen.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-SerialService serialService;
-BLEConnector bleConnector;
-MainViewModel mainViewModel(&serialService, &bleConnector);
-MainScreen mainScreen(&mainViewModel);
+// SerialService serialService;
+// BLEConnector bleConnector;
+// MainViewModel mainViewModel(&serialService, &bleConnector);
+// MainScreen mainScreen(&mainViewModel);
+ProductScreen productScreen;
 
 void init_app(void) {
     
@@ -45,7 +47,7 @@ void init_app(void) {
     bsp_display_lock(0);
 
     // TODO: Initialize other modules (e.g., BLE, AppManager, etc.)
-    mainScreen.init();
+    productScreen.init();
 
 //     /* Release the mutex */
     bsp_display_unlock();

@@ -20,24 +20,14 @@ void MainViewModel::bind(std::function<void(const MainUiState &)> observer)
     _onStateChanged = observer;
 
     _serialService->setup([this](SerialEvent event)
-                          { this->_handleRawSerial(event); });
+                          { _handleRawSerial(event); });
 
     _bleConnector->start();
     _bleConnector->bindConnectionHandler([this](bool connected)
-                                         { this->setConnectionState(connected ? CONNECTED : DISCONNECTED); });
+                                         { setConnectionState(connected ? CONNECTED : DISCONNECTED); });
 
     _bleConnector->setReceiveHandler([this](const BluetoothResponse &response)
-                                     { this->_handleBluetoothData(response); });
-}
-
-void MainViewModel::setDeviceConnected(bool isConnected)
-{
-    if (xSemaphoreTake(_stateMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-    {
-        _uiState.isDeviceConnected = isConnected;
-        xSemaphoreGive(_stateMutex);
-        _notifyStateChanged();
-    }
+                                     { _handleBluetoothData(response); });
 }
 
 void MainViewModel::setConnectionState(ConnectionState state)

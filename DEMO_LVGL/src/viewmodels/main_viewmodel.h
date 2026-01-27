@@ -19,7 +19,6 @@ public:
     ~MainViewModel();
 
     void bind(std::function<void(const MainUiState &)> observer);
-    void setDeviceConnected(bool isConnected);
     void setConnectionState(ConnectionState state);
     void requestListProducts();
 

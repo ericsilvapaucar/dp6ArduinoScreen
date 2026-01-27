@@ -17,5 +17,4 @@ private:
     void bindViewModel();
     void setupUI();
     void render(const MainUiState& state);
-    static void event_success_handler(lv_event_t * e);
 };
