@@ -90,12 +90,12 @@ void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
         return;
     }
 
-    uint16_t totalItems = response.len / 44;
+    uint16_t totalItems = response.len / sizeof(Product);
 
-    Product* products = (Product*)&response.data[3];
+    const Product* products = reinterpret_cast<const Product*>(response.data);
 
     for (int i = 0; i < totalItems; i++) {
         Serial.printf("Producto %d: %s | Precio: %s\n", i, products[i].name, products[i].price);
-        // Aquí puedes copiar lista[i].uuid para usarlo
+        Serial.flush();
     }
 }

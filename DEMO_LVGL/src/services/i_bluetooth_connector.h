@@ -6,7 +6,7 @@
 
 struct BluetoothResponse
 {
-    uint8_t data[512];
+    uint8_t data[1024];
     size_t len;
 };
 

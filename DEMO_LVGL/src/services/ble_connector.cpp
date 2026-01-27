@@ -1,35 +1,44 @@
 #include "ble_connector.h"
 
+
 void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
 {
-
-    Serial.println("Recibiendo datos por BLE");
     uint8_t* packet = pCharacteristic->getData();
-    uint8_t length = pCharacteristic->getLength();
+    size_t length = pCharacteristic->getLength();
+    
+    if (length < 4) {
+        Serial.println("Error: Paquete demasiado corto");
+        bytesRecibidos = 0;
+        countChunks = 0;
+        return;
+    }
 
-    uint8_t chunkIdx = packet[0];
-    uint8_t totalChunks = packet[1];
-    uint8_t* payload = &packet[2];
-    size_t payloadLen = length - 2;
+    uint8_t type = packet[0];
+    uint8_t chunkIdx = packet[1];
+    uint8_t totalChunks = packet[2];
+    uint8_t offsetSize = packet[3];
+    uint8_t* payload = &packet[4];
+    size_t payloadLen = length - 4;
 
-    Serial.printf("Datos %d de %d recibidos, longitud del payload: %d\n", chunkIdx + 1, totalChunks, payloadLen);
+    size_t offset = chunkIdx * offsetSize;
+    countChunks++;
 
-    if (chunkIdx == 0) bytesRecibidos = 0; // Reiniciar si es el primero
-
+    Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
     // Ir pegando en el buffer
-    memcpy(&bufferGlobal[bytesRecibidos], payload, payloadLen);
+    memcpy(&bufferGlobal[offset], payload, payloadLen);
     bytesRecibidos += payloadLen;
 
-    // ¿Ya llegó el último pedazo?
-    if (chunkIdx == totalChunks - 1) {
-        
-        Serial.println("Datos recibidos completamente por BLE.");
-
+    if (countChunks == totalChunks) {
+    
+        countChunks = 0;
         BluetoothResponse response;
 
-        response.len = payloadLen;
+        response.len = bytesRecibidos;
+        bytesRecibidos = 0;
 
-        memcpy(response.data, packet, response.len);
+        Serial.printf("Datos %d\n", response.len);
+
+        memcpy(response.data, bufferGlobal, response.len);
 
         if (_onReceive) {
             _onReceive(response);
@@ -37,7 +46,6 @@ void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
 
     
     }
-
 
 }
 

@@ -19,6 +19,16 @@ void setup()
 void loop() {
 
     lv_timer_handler();
+
+    static unsigned long lastCheck = 0;
+    
+    if (millis() - lastCheck >= 5000) {
+        Serial.printf("RAM: %d KB libres (%.1f%% usado)\n", 
+                      ESP.getFreeHeap() / 1024,
+                      (1 - ESP.getFreeHeap() / (float)ESP.getHeapSize()) * 100);
+        lastCheck = millis();
+    }
+
     delay(5);
 
 }

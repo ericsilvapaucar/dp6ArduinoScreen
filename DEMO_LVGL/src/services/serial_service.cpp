@@ -15,18 +15,40 @@ bool SerialService::setup(std::function<void(const SerialEvent &)> callback)
     _onDataCallback = callback;
 
     SERIAL_UART.begin(9600, SERIAL_8N1, TXD1, RXD1);
+
+    if (!SERIAL_UART) {
+        Serial.println("Error: No se pudo inicializar UART");
+        return false;
+    }
+
     SERIAL_UART.setTimeout(SERIAL_TIMEOUT_MS);
+    SERIAL_UART.setRxBufferSize(512); // Opcional: ajustar buffer
+
+    // Limpiar buffer por si hay basura
+    while (SERIAL_UART.available()) {
+        SERIAL_UART.read();
+    }
 
     // Esperar un momento para que el serial se estabilice
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    BaseType_t result = xTaskCreate(
+    // 4. MEJORA: Calcular stack size dinámicamente según PSRAM
+    UBaseType_t stackSize = 2048;
+    
+    if (psramFound()) {
+        // Con PSRAM disponible, podemos ser más generosos
+        stackSize = 3072;
+        Serial.println("SerialService: Usando stack extendido (PSRAM disponible)");
+    }
+
+    BaseType_t result = xTaskCreatePinnedToCore(
         _serial_loop,
         "SerialReadTask",
-        4096,
+        stackSize,
         this,
         1,
-        &_taskHandle);
+        &_taskHandle,
+        1);
 
     if (result != pdPASS)
     {
