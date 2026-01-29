@@ -1,57 +1,70 @@
 #include "ble_connector.h"
-
+#include "../model/model.h"
 
 void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
 {
-    uint8_t* packet = pCharacteristic->getData();
+    uint8_t *packet = pCharacteristic->getData();
     size_t length = pCharacteristic->getLength();
-    
-    if (length < 4) {
+
+    if (length < 4)
+    {
         Serial.println("Error: Paquete demasiado corto");
         bytesRecibidos = 0;
         countChunks = 0;
         return;
     }
 
-    uint8_t type = packet[0];
     uint8_t chunkIdx = packet[1];
     uint8_t totalChunks = packet[2];
     uint8_t offsetSize = packet[3];
-    uint8_t* payload = &packet[4];
+    uint8_t *payload = &packet[4];
     size_t payloadLen = length - 4;
 
-    size_t offset = chunkIdx * offsetSize;
-    countChunks++;
+    TypeMessage type = static_cast<TypeMessage>(packet[0]);
 
-    Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
-    // Ir pegando en el buffer
-    memcpy(&bufferGlobal[offset], payload, payloadLen);
-    bytesRecibidos += payloadLen;
+    if (type == TypeMessage::PRODUCT_INFO)
+    {
 
-    if (countChunks == totalChunks) {
-    
-        countChunks = 0;
-        BluetoothResponse response;
+        size_t offset = chunkIdx * offsetSize;
+        countChunks++;
 
-        response.len = bytesRecibidos;
-        bytesRecibidos = 0;
+        Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
+        // Ir pegando en el buffer
+        memcpy(&bufferGlobal[offset], payload, payloadLen);
+        bytesRecibidos += payloadLen;
 
-        Serial.printf("Datos %d\n", response.len);
+        if (countChunks == totalChunks)
+        {
 
-        memcpy(response.data, bufferGlobal, response.len);
+            countChunks = 0;
+            BluetoothResponse response;
 
-        if (_onReceive) {
-            _onReceive(response);
+            response.len = bytesRecibidos;
+            bytesRecibidos = 0;
+
+            Serial.printf("Datos %d\n", response.len);
+
+            memcpy(response.data, bufferGlobal, response.len);
+
+            if (_onReceive)
+            {
+                _onReceive(response);
+            }
         }
-
-    
     }
+    else if (type == TypeMessage::ERROR_MESSAGE)
+    {
 
+        std::string message(reinterpret_cast<const char *>(payload), payloadLen);
+
+        Serial.printf("Mensaje de error recibido: %s\n", message.c_str());
+    }
 }
 
 void BLEConnector::onConnect(BLEServer *pServer)
 {
-    if (_onConnectCallback) {
+    if (_onConnectCallback)
+    {
         _onConnectCallback(true);
     }
     Serial.println("Cliente BLE conectado");
@@ -59,12 +72,12 @@ void BLEConnector::onConnect(BLEServer *pServer)
 
 void BLEConnector::onDisconnect(BLEServer *pServer)
 {
-    if (_onConnectCallback) {
+    if (_onConnectCallback)
+    {
         _onConnectCallback(false);
     }
     Serial.println("Cliente BLE desconectado");
     BLEDevice::startAdvertising();
-    
 }
 
 bool BLEConnector::start()

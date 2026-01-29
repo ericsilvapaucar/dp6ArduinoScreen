@@ -57,8 +57,11 @@ void MainViewModel::_handleRawSerial(const SerialEvent &event)
 
     Serial.printf("Datos serial recibidos: %s, longitud: %d\n", barcode, event.len);
 
+    size_t totalSize = 1 + len;
+
     std::vector<uint8_t> dataToSend;
-    dataToSend.insert(dataToSend.begin(), {'4', ','});
+    dataToSend.reserve(totalSize);
+    dataToSend.push_back(0x04);
     dataToSend.insert(dataToSend.end(), event.data, event.data + len);
 
     _bleConnector->send(dataToSend);
