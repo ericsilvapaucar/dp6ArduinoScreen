@@ -26,4 +26,5 @@ private:
     void _handleRawSerial(const SerialEvent &event);
     void _notifyStateChanged();
     void _handleBluetoothData(const BluetoothResponse &response);
+    void _setProductList(const char totalAmount[], uint16_t totalItems, const Product* products);
 };

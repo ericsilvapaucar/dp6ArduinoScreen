@@ -1,5 +1,4 @@
 #include "ble_connector.h"
-#include "../model/model.h"
 
 void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
 {
@@ -14,50 +13,37 @@ void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
         return;
     }
 
-    uint8_t chunkIdx = packet[1];
-    uint8_t totalChunks = packet[2];
-    uint8_t offsetSize = packet[3];
-    uint8_t *payload = &packet[4];
-    size_t payloadLen = length - 4;
+    uint8_t chunkIdx = packet[0];
+    uint8_t totalChunks = packet[1];
+    uint8_t offsetSize = packet[2];
+    uint8_t *payload = &packet[3];
+    size_t payloadLen = length - 3;
 
-    TypeMessage type = static_cast<TypeMessage>(packet[0]);
+    size_t offset = chunkIdx * offsetSize;
+    countChunks++;
 
-    if (type == TypeMessage::PRODUCT_INFO)
+    Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
+    // Ir pegando en el buffer
+    memcpy(&bufferGlobal[offset], payload, payloadLen);
+    bytesRecibidos += payloadLen;
+
+    if (countChunks == totalChunks)
     {
+        countChunks = 0;
 
-        size_t offset = chunkIdx * offsetSize;
-        countChunks++;
+        BluetoothResponse response;
 
-        Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
-        // Ir pegando en el buffer
-        memcpy(&bufferGlobal[offset], payload, payloadLen);
-        bytesRecibidos += payloadLen;
+        response.type = bufferGlobal[0];
+        response.len = bytesRecibidos - 1;
+        bytesRecibidos = 0;
 
-        if (countChunks == totalChunks)
+
+        memcpy(response.data, bufferGlobal + 1, response.len - 1);
+
+        if (_onReceive)
         {
-
-            countChunks = 0;
-            BluetoothResponse response;
-
-            response.len = bytesRecibidos;
-            bytesRecibidos = 0;
-
-            Serial.printf("Datos %d\n", response.len);
-
-            memcpy(response.data, bufferGlobal, response.len);
-
-            if (_onReceive)
-            {
-                _onReceive(response);
-            }
+            _onReceive(response);
         }
-    }
-    else if (type == TypeMessage::ERROR_MESSAGE)
-    {
-
-        std::string message(reinterpret_cast<const char *>(payload), payloadLen);
-
-        Serial.printf("Mensaje de error recibido: %s\n", message.c_str());
     }
 }
 

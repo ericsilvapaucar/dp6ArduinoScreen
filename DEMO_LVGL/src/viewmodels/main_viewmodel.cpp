@@ -83,12 +83,55 @@ void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
         return;
     }
 
-    uint16_t totalItems = response.len / sizeof(Product);
 
-    const Product* products = reinterpret_cast<const Product*>(response.data);
+    TypeMessage type = static_cast<TypeMessage>(response.type);
+    Serial.printf("Type message: %d\n", type);
+    switch (type)
+    {
+    case TypeMessage::PRODUCT_INFO: {
+    
+        size_t headerSize = 10;
+        size_t productOffset = headerSize;
 
-    for (int i = 0; i < totalItems; i++) {
-        Serial.printf("Producto %d: %s | Precio: %s\n", i, products[i].name, products[i].price);
-        Serial.flush();
+        char totalAmount[headerSize];
+        memcpy(totalAmount, response.data, sizeof(totalAmount));
+
+        size_t bodySize = response.len - headerSize;
+        size_t tSize = sizeof(Product);
+
+        uint16_t totalItems = bodySize / sizeof(Product);
+        const Product* products = reinterpret_cast<const Product*>(response.data + productOffset);
+
+        Serial.printf("Size Data: %d Header Size: %d, Body Size: %d, tSize: %d, Total Items: %d\n", response.len, headerSize, bodySize, tSize, totalItems);
+        Serial.printf("total amount: %s\n", totalAmount);
+
+        for (int i = 0; i < totalItems; i++) {
+            Serial.printf("Producto %d: %s | Precio: %s | Total: %s\n", i, products[i].name, products[i].price, products[i].quantity, totalAmount);
+            Serial.flush();
+        }
+
+        _setProductList(totalAmount, totalItems, products);
+
+        break;
     }
+    default:
+        break;
+    }
+
+}
+
+void MainViewModel::_setProductList(const char totalAmount[], uint16_t totalItems, const Product* products)
+{
+    Serial.printf("ProductList: %s - %d\n", totalAmount, totalItems);
+    if (xSemaphoreTake(_stateMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+    {
+        
+        memcpy(_uiState.productList.totalAmount, totalAmount, sizeof(_uiState.productList.totalAmount));
+        _uiState.productList.productCount = totalItems;
+        memcpy(_uiState.productList.productt, products, sizeof(Product) * totalItems);
+
+        xSemaphoreGive(_stateMutex);
+        _notifyStateChanged(); 
+    }
+
 }

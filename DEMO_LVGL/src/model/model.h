@@ -1,12 +1,15 @@
+#pragma once
 #include <stdint.h>
+
 
 struct __attribute__((packed)) Product {
     char name[24];
-    char price[8];
-    char total[8];
-    char quantity[4];
-    
+    char price[16];
+    char quantity[16];
+    char unitName[16];
+    uint8_t uuid[16]; 
 }; 
+
 // Tamaño total por producto: 44 bytes
 
 enum class TypeMessage : uint8_t {

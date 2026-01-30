@@ -30,4 +30,8 @@ namespace UIHelper
 
     lv_obj_t *createPanel(lv_obj_t *parent, lv_coord_t radius = 5);
 
+    lv_obj_t *createTotalAmountPanel(lv_obj_t *parent);
+
+    lv_obj_t *createProductItem(lv_obj_t *parent, const char* name, const char* quantity, const char* unitName);
+
 }
