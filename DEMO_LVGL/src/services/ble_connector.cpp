@@ -22,11 +22,13 @@ void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
     size_t offset = chunkIdx * offsetSize;
     countChunks++;
 
-    Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
     // Ir pegando en el buffer
     memcpy(&bufferGlobal[offset], payload, payloadLen);
     bytesRecibidos += payloadLen;
+    Serial.printf("bytes recibidos %d\n", bytesRecibidos);
 
+    Serial.printf("index: %d offset: %d, Datos %d de %d recibidos, longitud del payload: %d, total: %d\n", chunkIdx, offsetSize, countChunks, totalChunks, payloadLen, length);
+    
     if (countChunks == totalChunks)
     {
         countChunks = 0;
@@ -108,6 +110,7 @@ void BLEConnector::send(const std::vector<uint8_t> &data)
 {
     if (isConnected())
     {
+        Serial.println("send BLE");
         pTxCharacteristic->setValue(data.data(), data.size());
         pTxCharacteristic->notify(); // Empuja el dato al cliente
     }

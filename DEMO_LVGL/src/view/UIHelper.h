@@ -7,7 +7,17 @@ extern "C"
     LV_IMG_DECLARE(icon_alert);
     LV_IMG_DECLARE(icon_error);
     LV_IMG_DECLARE(icon_check);
+    LV_IMG_DECLARE(icon_delete);
 }
+
+struct ProductItemParam
+{
+    const char *name;
+    const char *quantity;
+    const char *unitName;
+    lv_color_t backgroundColor;
+    lv_color_t textColor;
+}; 
 
 namespace UIHelper
 {
@@ -32,6 +42,8 @@ namespace UIHelper
 
     lv_obj_t *createTotalAmountPanel(lv_obj_t *parent);
 
-    lv_obj_t *createProductItem(lv_obj_t *parent, const char* name, const char* quantity, const char* unitName);
+    lv_obj_t *createProductItem(lv_obj_t *parent, ProductItemParam param);
+
+    lv_obj_t *createDeleteButton(lv_obj_t *parent, lv_color_t color);
 
 }

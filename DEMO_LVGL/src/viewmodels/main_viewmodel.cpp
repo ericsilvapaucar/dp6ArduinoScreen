@@ -85,12 +85,12 @@ void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
 
 
     TypeMessage type = static_cast<TypeMessage>(response.type);
-    Serial.printf("Type message: %d\n", type);
+    Serial.printf("Type message: %d, size: %d\n", type, response.len);
     switch (type)
     {
     case TypeMessage::PRODUCT_INFO: {
     
-        size_t headerSize = 10;
+        size_t headerSize = 16;
         size_t productOffset = headerSize;
 
         char totalAmount[headerSize];
@@ -106,10 +106,9 @@ void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
         Serial.printf("total amount: %s\n", totalAmount);
 
         for (int i = 0; i < totalItems; i++) {
-            Serial.printf("Producto %d: %s | Precio: %s | Total: %s\n", i, products[i].name, products[i].price, products[i].quantity, totalAmount);
-            Serial.flush();
+            Serial.printf("(%d) Nombre: %s | Precio: %s | Cantidad: %s %s\n", i + 1, products[i].name, products[i].price, products[i].quantity, products[i].unitName);    
         }
-
+        Serial.flush();
         _setProductList(totalAmount, totalItems, products);
 
         break;
@@ -128,10 +127,32 @@ void MainViewModel::_setProductList(const char totalAmount[], uint16_t totalItem
         
         memcpy(_uiState.productList.totalAmount, totalAmount, sizeof(_uiState.productList.totalAmount));
         _uiState.productList.productCount = totalItems;
-        memcpy(_uiState.productList.productt, products, sizeof(Product) * totalItems);
+        memcpy(_uiState.productList.product, products, sizeof(Product) * totalItems);
 
         xSemaphoreGive(_stateMutex);
         _notifyStateChanged(); 
     }
 
+}
+
+void MainViewModel::deleteProduct(const u_int8_t uuid[])
+{
+    // 1. Sabemos que el UUID siempre mide 16 bytes
+    const size_t UUID_SIZE = 16;
+    const size_t TOTAL_SIZE = 1 + UUID_SIZE; // Comando (1) + UUID (16)
+
+    std::vector<uint8_t> dataToSend;
+    dataToSend.reserve(TOTAL_SIZE); // Evitamos reasignaciones de memoria
+    
+    // 2. Insertar el comando de eliminar (0x05)
+    dataToSend.push_back(0x05);
+    
+    // 3. Insertar los 16 bytes del UUID
+    // Usamos el tamaño explícito (16) en lugar de sizeof
+    dataToSend.insert(dataToSend.end(), uuid, uuid + UUID_SIZE);
+
+    // 4. Enviar a través del conector BLE
+    if (_bleConnector) {
+        _bleConnector->send(dataToSend);
+    }
 }

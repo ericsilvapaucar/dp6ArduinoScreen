@@ -11,7 +11,7 @@ enum ConnectionState {
 struct ProductList {
     char totalAmount[16];
     uint8_t productCount;
-    Product productt[MAX_PRODUCTS];
+    Product product[MAX_PRODUCTS];
 };
 
 struct MainUiState {

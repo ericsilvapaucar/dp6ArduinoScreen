@@ -27,4 +27,6 @@ private:
     void render(const MainUiState& state);
     void _createMainScreen(lv_obj_t *root);
     void _createProductScreen(lv_obj_t *root);
+
+    static void _onDeleltePressed(lv_event_t *e);
 };

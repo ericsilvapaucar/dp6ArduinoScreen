@@ -145,29 +145,78 @@ lv_obj_t *UIHelper::createTotalAmountPanel(lv_obj_t *parent)
     return totalValue;
 }
 
-lv_obj_t *UIHelper::createProductItem(lv_obj_t *parent, const char* name, const char* quantity, const char* unitName)
+lv_obj_t *UIHelper::createProductItem(lv_obj_t *parent, ProductItemParam param)
 {
 
-    lv_obj_t *productItem = UIHelper::createPanel(parent, 12);
+    lv_obj_t *container = UIHelper::createPanel(parent, 12);
+    lv_obj_set_size(container, lv_pct(100), 72); // Ancho completo, altura según contenido
+    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_ROW);        // Row { ... }
+    lv_obj_set_layout(container, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_align(container,
+                          LV_FLEX_ALIGN_START,  // Alineación horizontal
+                          LV_FLEX_ALIGN_CENTER, // Alineación vertical (CenterVertically)
+                          LV_FLEX_ALIGN_START);
+
+    lv_obj_set_style_bg_color(container, param.backgroundColor, LV_PART_MAIN);
+
+
+    lv_obj_t *productItem = lv_obj_create(container);
+    lv_obj_set_style_bg_opa(productItem, LV_OPA_TRANSP, LV_PART_MAIN);
+    lv_obj_set_height(productItem, LV_SIZE_CONTENT);
+    lv_obj_set_flex_grow(productItem, 1);
     lv_obj_set_layout(productItem, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(productItem, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_all(productItem, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(productItem, 0, LV_PART_MAIN);
 
     lv_obj_t *label1 = lv_label_create(productItem);
     lv_obj_set_width(label1, lv_pct(100));
-    lv_label_set_text(label1, name);
-    lv_label_set_long_mode(label1, LV_LABEL_LONG_DOT); // Pone "..." si es largo
+    lv_label_set_text(label1, param.name);
+    lv_label_set_long_mode(label1, LV_LABEL_LONG_DOT);             // Pone "..." si es largo
     lv_obj_set_style_text_font(label1, &lv_font_montserrat_16, 0); // Un poco más grande
-    lv_obj_set_style_text_color(label1, lv_color_white(), 0);
+    lv_obj_set_style_text_color(label1, param.textColor, 0);
 
     lv_obj_t *label2 = lv_label_create(productItem);
     char resultado[40];
-    snprintf(resultado, sizeof(resultado), "%s %s", quantity, unitName);
+    snprintf(resultado, sizeof(resultado), "%s %s", param.quantity, param.unitName);
 
     lv_label_set_text(label2, resultado);
     lv_obj_align(label2, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_text_color(label2, lv_palette_main(LV_PALETTE_GREY), 0);
+    lv_obj_set_style_text_color(label2, param.textColor, 0);
     lv_obj_set_style_text_font(label2, &lv_font_montserrat_12, 0);
 
-    return productItem;
+    auto button = UIHelper::createDeleteButton(container, param.textColor);
 
+    return button;
+}
+
+lv_obj_t *UIHelper::createDeleteButton(lv_obj_t *parent, lv_color_t color)
+{
+    // 1. Crear el contenedor del botón (el área clickeable)
+    lv_obj_t *btn = lv_btn_create(parent);
+
+    // --- ESTILO "FLAT" (OPCIONAL) ---
+    // Si quieres que parezca solo el icono flotando (sin fondo ni sombra de botón),
+    // descomenta estas líneas para limpiar el estilo por defecto del botón:
+
+    lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, LV_PART_MAIN); // Fondo transparente
+    lv_obj_set_style_border_width(btn, 0, LV_PART_MAIN);       // Sin borde
+    lv_obj_set_style_shadow_width(btn, 0, LV_PART_MAIN);       // Sin sombra
+
+    // 2. Crear la imagen DENTRO del botón
+    lv_obj_t *icon = lv_img_create(btn);
+    lv_img_set_src(icon, &icon_delete);
+    lv_obj_center(icon); // Centrar el icono en el área del botón
+
+    // 3. APLICAR EL TINTE (La parte clave)
+    // Esto le dice a LVGL: "Usa este color para recolorear la imagen"
+    lv_obj_set_style_img_recolor(icon, color, LV_PART_MAIN);
+    // Esto le dice: "Aplica el color con 100% de fuerza (cubre el color original)"
+    lv_obj_set_style_img_recolor_opa(icon, LV_OPA_COVER, LV_PART_MAIN);
+
+    // IMPORTANTE: Hacemos que la imagen NO capture los clics,
+    // para que los eventos pasen al botón padre.
+    lv_obj_clear_flag(icon, LV_OBJ_FLAG_CLICKABLE);
+
+    return btn;
 }

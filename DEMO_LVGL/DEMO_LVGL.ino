@@ -22,7 +22,7 @@ void loop() {
 
     static unsigned long lastCheck = 0;
     
-    if (millis() - lastCheck >= 5000) {
+    if (millis() - lastCheck >= 10000) {
         Serial.printf("RAM: %d KB libres (%.1f%% usado)\n", 
                       ESP.getFreeHeap() / 1024,
                       (1 - ESP.getFreeHeap() / (float)ESP.getHeapSize()) * 100);

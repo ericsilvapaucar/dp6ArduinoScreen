@@ -21,6 +21,7 @@ public:
     void bind(std::function<void(const MainUiState &)> observer);
     void setConnectionState(ConnectionState state);
     void requestListProducts();
+    void deleteProduct(const u_int8_t uuid[]);
 
 private:
     void _handleRawSerial(const SerialEvent &event);
