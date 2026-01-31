@@ -1,6 +1,28 @@
 #pragma once
 #include <stdint.h>
 
+enum class BeepType {
+    CONNECTED,
+    VOICE,
+};
+
+// Definición de los Enums tal cual los pediste
+enum class VoiceType {
+    STANDARD,
+    OLD,
+    FUNNY,
+    WOMAN
+};
+
+enum class VoiceMessage {
+    ERROR,
+    NO_STOCK,
+    PRODUCT_NOT_FOUND,
+    NO_PRICE,
+    INVALID,
+    THANKS
+};
+
 
 struct __attribute__((packed)) Product {
     char name[24];

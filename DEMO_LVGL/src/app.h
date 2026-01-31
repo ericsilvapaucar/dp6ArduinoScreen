@@ -19,10 +19,11 @@ extern "C"
 {
 #endif
 
+        VoiceService voiceService;
         SerialService serialService;
         BLEConnector bleConnector;
         ButtonService buttonService;
-        MainViewModel mainViewModel(&serialService, &bleConnector, &buttonService);
+        MainViewModel mainViewModel(&serialService, &bleConnector, &buttonService, &voiceService);
         MainScreen mainScreen(&mainViewModel);
         // ProductScreen productScreen;
 
