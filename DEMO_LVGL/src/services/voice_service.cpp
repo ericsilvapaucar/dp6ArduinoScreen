@@ -1,7 +1,6 @@
 #include "voice_service.h"
 #include "FS.h"
 #include "SD_MMC.h"
-#include "SPIFFS.h"
 
 static const char *MP3_PATH = "/ZL - Chengdu.mp3"; // Nombre del audio
 
@@ -73,14 +72,32 @@ namespace
 
 void VoiceService::setup()
 {
-    if (!SPIFFS.begin(true))
+
+    SD_MMC.setPins(SD_CLK, SD_CMD, SD_D0); // 1-bit
+    // SD_MMC.setFrequency(20000000);          // 20 MHz (más estable) (opcional)
+
+    if (!SD_MMC.begin("/sdcard", true))
+    { // true = 1-bit
+        Serial.println("SD_MMC.begin() FAIL");
+        return;
+    }
+    // Revisa que tipo de memoria es (opcional)
+    uint8_t type = SD_MMC.cardType();
+    if (type == CARD_NONE)
     {
-        Serial.println("Error: No se pudo montar el sistema de archivos SPIFFS");
+        Serial.println("No SD card attached");
         return;
     }
 
-    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
-    audio.setVolume(12);
+    Serial.print("Card type: ");
+    if (type == CARD_MMC)
+        Serial.println("MMC");
+    else if (type == CARD_SD)
+        Serial.println("SDSC");
+    else if (type == CARD_SDHC)
+        Serial.println("SDHC/SDXC");
+    else
+        Serial.println("UNKNOWN");
 
     // Creamos una tarea en el Core 0 (el Core 1 suele ser para la UI/LVGL)
     BaseType_t result = xTaskCreatePinnedToCore(
@@ -122,33 +139,23 @@ void VoiceService::play(BeepType beepType)
     // Estructura: /v[voiceType]_m[messageType].mp3 -> /v0_m1.mp3
     snprintf(filePath, sizeof(filePath), "/%s.mp3", getBeepTypeeName(beepType));
 
-    if (!SPIFFS.exists(filePath))
+    // Verifica que el archivo exista antes de reproducir
+    if (!SD_MMC.exists(filePath))
     {
-        Serial.printf("DEBUG: El archivo NO existe en la memoria interna: %s\n", filePath);
-
-        // Opcional: Listar todos los archivos para ver si hay errores de escritura
-        File root = SPIFFS.open("/");
-        File file = root.openNextFile();
-        while (file)
-        {
-            Serial.printf("Archivo en memoria: %s\n", file.name());
-            file = root.openNextFile();
-        }
+        Serial.printf("MP3 no existe: %s\n", filePath);
+        Serial.println("Cambia MP3_PATH por uno que esté en la raíz o carpeta correcta.");
+        return;
+    }
+    // Si usas SD, sería audio.connecttoFS(SD, filePath);
+    // Si usas memoria interna (SPIFFS/LittleFS):
+    bool success = audio.connecttoFS(SD_MMC, filePath);
+    if (success)
+    {
+        Serial.printf("Reproduciendo: %s\n", filePath);
     }
     else
     {
-
-        // Si usas SD, sería audio.connecttoFS(SD, filePath);
-        // Si usas memoria interna (SPIFFS/LittleFS):
-        bool success = audio.connecttoFS(SPIFFS, filePath);
-        if (success)
-        {
-            Serial.printf("Reproduciendo: %s\n", filePath);
-        }
-        else
-        {
-            Serial.printf("No se pudo reproducir: %s\n", filePath);
-        }
+        Serial.printf("No se pudo reproducir: %s\n", filePath);
     }
 }
 
@@ -164,7 +171,7 @@ void VoiceService::play(VoiceType voiceType, VoiceMessage messageType)
 
     // Si usas SD, sería audio.connecttoFS(SD, filePath);
     // Si usas memoria interna (SPIFFS/LittleFS):
-    audio.connecttoFS(SPIFFS, filePath);
+    audio.connecttoFS(SD_MMC, filePath);
 }
 
 void VoiceService::setVolume(uint8_t volume)
