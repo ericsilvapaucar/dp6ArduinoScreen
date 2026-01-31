@@ -40,7 +40,7 @@ void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
         bytesRecibidos = 0;
 
 
-        memcpy(response.data, bufferGlobal + 1, response.len - 1);
+        memcpy(response.data, bufferGlobal + 1, response.len);
 
         if (_onReceive)
         {

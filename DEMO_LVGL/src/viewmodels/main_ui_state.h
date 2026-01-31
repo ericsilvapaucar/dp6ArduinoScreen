@@ -17,5 +17,7 @@ struct ProductList {
 struct MainUiState {
     ConnectionState connectionState = DISCONNECTED;
     ProductList productList;
+    bool isSuccess = false;
+    int8_t errorCode = 0;
 };
 

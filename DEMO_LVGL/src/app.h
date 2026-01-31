@@ -21,7 +21,8 @@ extern "C"
 
         SerialService serialService;
         BLEConnector bleConnector;
-        MainViewModel mainViewModel(&serialService, &bleConnector);
+        ButtonService buttonService;
+        MainViewModel mainViewModel(&serialService, &bleConnector, &buttonService);
         MainScreen mainScreen(&mainViewModel);
         // ProductScreen productScreen;
 

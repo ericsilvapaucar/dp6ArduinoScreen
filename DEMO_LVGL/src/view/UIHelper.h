@@ -19,6 +19,11 @@ struct ProductItemParam
     lv_color_t textColor;
 }; 
 
+struct ErrorView {
+    lv_obj_t *container;
+    lv_obj_t *label;
+};
+
 namespace UIHelper
 {
 
@@ -45,5 +50,9 @@ namespace UIHelper
     lv_obj_t *createProductItem(lv_obj_t *parent, ProductItemParam param);
 
     lv_obj_t *createDeleteButton(lv_obj_t *parent, lv_color_t color);
+
+    lv_obj_t *createSuccessView(lv_obj_t *parent);
+
+    ErrorView createErrorView(lv_obj_t *parent);
 
 }

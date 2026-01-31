@@ -6,7 +6,8 @@ struct DeleteEventParams
     MainScreen *context; // Tu clase (this)
     uint8_t uuid[16];    // El ID del producto
     // Constructor para facilitar la vida
-    DeleteEventParams(MainScreen* s, const uint8_t* u) : context(s) {
+    DeleteEventParams(MainScreen *s, const uint8_t *u) : context(s)
+    {
         memcpy(uuid, u, 16); // Copia profunda de los bytes
     }
 };
@@ -51,6 +52,8 @@ void MainScreen::setupUI()
 
     _createMainScreen(root);
     _createProductScreen(root);
+    _createErrorView(root);
+    _createSuccessView(root);
 
     lv_scr_load(root);
 }
@@ -96,6 +99,20 @@ void MainScreen::_createProductScreen(lv_obj_t *root)
     _productScreen = container;
 }
 
+void MainScreen::_createSuccessView(lv_obj_t *root)
+{
+    _successView = UIHelper::createSuccessView(root);
+    lv_obj_add_flag(_successView, LV_OBJ_FLAG_HIDDEN);
+}
+
+void MainScreen::_createErrorView(lv_obj_t *root)
+{
+    auto view = UIHelper::createErrorView(root);
+    _errorView = view.container;
+    _errorLabel = view.label;
+    lv_obj_add_flag(view.container, LV_OBJ_FLAG_HIDDEN);
+}
+
 void MainScreen::render(const MainUiState &state)
 {
 
@@ -105,6 +122,8 @@ void MainScreen::render(const MainUiState &state)
         // Mostrar pantalla de en espera
         lv_obj_clear_flag(_mainScreen, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(_productScreen, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(_errorView, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(_successView, LV_OBJ_FLAG_HIDDEN);
 
         lv_obj_clear_flag(_spinnerLoading, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(_iconCheck, LV_OBJ_FLAG_HIDDEN);
@@ -112,7 +131,57 @@ void MainScreen::render(const MainUiState &state)
         break;
     case CONNECTED:
 
-        if (state.productList.productCount > 0)
+        if (state.errorCode > 0)
+        {
+            lv_obj_clear_flag(_errorView, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_productScreen, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_mainScreen, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_successView, LV_OBJ_FLAG_HIDDEN);
+
+            switch (state.errorCode)
+            {
+            case 1:
+                lv_label_set_text(_errorLabel, "No hay stock suficiente");
+                break;
+            case 2:
+                lv_label_set_text(_errorLabel, "Producto no encontrado");
+                break;
+            case 3:
+                lv_label_set_text(_errorLabel, "No hay precio");
+                break;
+            case 4:
+                lv_label_set_text(_errorLabel, "Nota de venta no configurado");
+                break;
+
+            case 5:
+                lv_label_set_text(_errorLabel, "Metodo de pago no configurado");
+                break;
+
+            case 6:
+                lv_label_set_text(_errorLabel, "Tipo de pago no configurado");
+                break;
+
+            case 7:
+                lv_label_set_text(_errorLabel, "No se pudo realizar la venta");
+                break;
+            case 8:
+                lv_label_set_text(_errorLabel, "El carrito de compras esta vacio");
+                break;
+            case 9:
+                lv_label_set_text(_errorLabel, "Error de voz");
+                break;
+            default:
+                break;
+            }
+        }
+        else if (state.isSuccess)
+        {
+            lv_obj_clear_flag(_successView, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_productScreen, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_errorView, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_mainScreen, LV_OBJ_FLAG_HIDDEN);
+        }
+        else if (state.productList.productCount > 0)
         {
             lv_obj_clean(_productListContainer);
 
@@ -143,11 +212,11 @@ void MainScreen::render(const MainUiState &state)
 
                 lv_obj_t *button = UIHelper::createProductItem(_productListContainer, params);
 
-                DeleteEventParams* userData = new DeleteEventParams(this, state.productList.product[i].uuid);
+                DeleteEventParams *userData = new DeleteEventParams(this, state.productList.product[i].uuid);
                 lv_obj_add_event_cb(button, _onDeleltePressed, LV_EVENT_CLICKED, userData);
 
                 lv_obj_add_event_cb(button, [](lv_event_t *e)
-                                            {
+                                    {
                 DeleteEventParams* p = (DeleteEventParams*)lv_event_get_user_data(e);
                 delete p; }, LV_EVENT_DELETE, userData);
             }
@@ -155,6 +224,8 @@ void MainScreen::render(const MainUiState &state)
             // Mostrar pantalla de productos
             lv_obj_clear_flag(_productScreen, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(_mainScreen, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_errorView, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_successView, LV_OBJ_FLAG_HIDDEN);
 
             lv_label_set_text(_labelTotalAmount, state.productList.totalAmount);
         }
@@ -163,6 +234,8 @@ void MainScreen::render(const MainUiState &state)
             // Mostrar pantalla de en espera
             lv_obj_clear_flag(_mainScreen, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(_productScreen, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_errorView, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(_successView, LV_OBJ_FLAG_HIDDEN);
 
             // Mostrar que el dispositivo esta conectado
             lv_obj_add_flag(_spinnerLoading, LV_OBJ_FLAG_HIDDEN);

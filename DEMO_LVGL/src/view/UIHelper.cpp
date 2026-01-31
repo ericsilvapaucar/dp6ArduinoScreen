@@ -149,8 +149,8 @@ lv_obj_t *UIHelper::createProductItem(lv_obj_t *parent, ProductItemParam param)
 {
 
     lv_obj_t *container = UIHelper::createPanel(parent, 12);
-    lv_obj_set_size(container, lv_pct(100), 72); // Ancho completo, altura según contenido
-    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_ROW);        // Row { ... }
+    lv_obj_set_size(container, lv_pct(100), 72);       // Ancho completo, altura según contenido
+    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_ROW); // Row { ... }
     lv_obj_set_layout(container, LV_LAYOUT_FLEX);
     lv_obj_set_flex_align(container,
                           LV_FLEX_ALIGN_START,  // Alineación horizontal
@@ -158,7 +158,6 @@ lv_obj_t *UIHelper::createProductItem(lv_obj_t *parent, ProductItemParam param)
                           LV_FLEX_ALIGN_START);
 
     lv_obj_set_style_bg_color(container, param.backgroundColor, LV_PART_MAIN);
-
 
     lv_obj_t *productItem = lv_obj_create(container);
     lv_obj_set_style_bg_opa(productItem, LV_OPA_TRANSP, LV_PART_MAIN);
@@ -219,4 +218,34 @@ lv_obj_t *UIHelper::createDeleteButton(lv_obj_t *parent, lv_color_t color)
     lv_obj_clear_flag(icon, LV_OBJ_FLAG_CLICKABLE);
 
     return btn;
+}
+
+lv_obj_t *UIHelper::createSuccessView(lv_obj_t *parent)
+{
+    lv_obj_t *container = UIHelper::createMainContainer(parent);
+
+    auto icon = UIHelper::createCheckIcon(container);
+
+    auto label = lv_label_create(container);
+    lv_label_set_text(label, "Venta Exitosa");
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_pad_top(label, 8, LV_PART_MAIN);
+
+    return container;
+}
+
+ErrorView UIHelper::createErrorView(lv_obj_t *parent)
+{
+    lv_obj_t *container = UIHelper::createMainContainer(parent);
+
+    auto icon = UIHelper::createErrorIcon(container);
+
+    auto label = lv_label_create(container);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_16, 0);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_pad_top(label, 8, LV_PART_MAIN);
+
+    return ErrorView{container, label};
+
 }
