@@ -5,6 +5,7 @@
 #include "../services/serial_service.h"
 #include "../services/ble_connector.h"
 #include "../services/button_service.h"
+#include "../services/display_service.h"
 
 class MainViewModel
 {
@@ -12,12 +13,13 @@ private:
     SerialService *_serialService;
     BLEConnector *_bleConnector;
     ButtonService *_buttonServices;
+    DisplayService * _displayService;
     MainUiState _uiState;
     std::function<void(const MainUiState &)> _onStateChanged;
     SemaphoreHandle_t _stateMutex; // Protección de datos
 
 public:
-    MainViewModel(SerialService *serialService, BLEConnector *bleConnector, ButtonService *ButtonService);
+    MainViewModel(SerialService *serialService, BLEConnector *bleConnector, ButtonService *ButtonService, DisplayService *displayService);
     ~MainViewModel();
 
     void bind(std::function<void(const MainUiState &)> observer);
