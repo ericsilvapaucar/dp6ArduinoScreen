@@ -7,6 +7,7 @@ void setup()
     String title = "LVGL porting example";
 
     Serial.begin(115200);
+    delay(500);
     Serial.println(title + " start");
 
     Serial.println("Initialize panel device");

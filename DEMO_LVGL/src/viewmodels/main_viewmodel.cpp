@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "../model/model.h"
 
-MainViewModel::MainViewModel(SerialService *serialService, BLEConnector *bleConnector, ButtonService *buttonService, VoiceService *voiceService)
+MainViewModel::MainViewModel(SerialService *serialService, BLEConnector *bleConnector, ButtonService *buttonService, VoiceService *voiceService, DisplayService *displayService)
     : _serialService(serialService), _bleConnector(bleConnector), _buttonServices(buttonService), _voiceService(voiceService),  _displayService(displayService)
 {
     _stateMutex = xSemaphoreCreateMutex();
@@ -36,6 +36,7 @@ void MainViewModel::bind(std::function<void(const MainUiState &)> observer)
                                        { _handleButtonEvent(type); });
 
     _voiceService->setup();
+    // _voiceService->play(BeepType::CONNECTED);
 }
 
 void MainViewModel::setConnectionState(ConnectionState state)
@@ -46,7 +47,7 @@ void MainViewModel::setConnectionState(ConnectionState state)
         xSemaphoreGive(_stateMutex);
         _notifyStateChanged();
         if (state == CONNECTED) {
-        _voiceService->play(BeepType::CONNECTED);
+            _voiceService->play(BeepType::CONNECTED);
         }
     }
 }

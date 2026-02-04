@@ -1,6 +1,7 @@
 #include "voice_service.h"
 #include "FS.h"
 #include "SD_MMC.h"
+#include <freertos/queue.h>
 
 static const char *MP3_PATH = "/ZL - Chengdu.mp3"; // Nombre del audio
 
@@ -23,7 +24,7 @@ namespace
         case BeepType::CONNECTED:
             return "CONNECTED";
         case BeepType::VOICE:
-            return "BEEP";
+            return "VOICE";
         default:
             return "CONNECTED";
         }
@@ -99,14 +100,27 @@ void VoiceService::setup()
     else
         Serial.println("UNKNOWN");
 
+    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    audio.setVolume(21); // 0-21 típicamente
+
+    _queue = xQueueCreate(5, sizeof(char[64]));
+
+    if (_queue == NULL)
+    {
+        Serial.println("FATAL: No se pudo crear la cola (Falta de RAM)");
+        return;
+    }
+
+    BaseType_t stackSize = 8192;
+
     // Creamos una tarea en el Core 0 (el Core 1 suele ser para la UI/LVGL)
     BaseType_t result = xTaskCreatePinnedToCore(
         this->audioTask,
         "AudioTask",
-        10000,
+        stackSize,
         this, // Pasamos la instancia de la clase como parámetro
         3,    // Prioridad alta para que el audio no tartamudee
-        NULL,
+        &_taskHandle,
         0 // Core 0
     );
 
@@ -123,10 +137,72 @@ void VoiceService::setup()
 void VoiceService::audioTask(void *pvParameters)
 {
     VoiceService *instance = (VoiceService *)pvParameters;
+
+    if (instance->_queue == NULL)
+    {
+        Serial.println("AudioTask: Cola no inicializada. Abortando tarea.");
+        vTaskDelete(NULL);
+        return;
+    }
+
+    char nextFile[64];
+
     for (;;)
     {
-        instance->audio.loop();       // Alimenta el buffer I2S
-        vTaskDelay(pdMS_TO_TICKS(1)); // Cede un poco de tiempo al sistema
+        // Revisamos si hay un nuevo archivo para reproducir sin bloquear el loop
+        if (xQueueReceive(instance->_queue, &nextFile, 0) == pdPASS)
+        {
+            Serial.printf("AudioTask: Intentando reproducir %s\n", nextFile);
+
+            
+            instance->audio.stopSong();
+            vTaskDelay(pdMS_TO_TICKS(50));
+
+            if (!instance->audio.connecttoFS(SD_MMC, nextFile))
+            {
+                Serial.printf("AudioTask: Error al conectar con %s\n", nextFile);
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(50));
+
+            Serial.printf("Conectado exitosamente a %s\n", nextFile);
+
+            unsigned long timeout = millis();
+            while (instance->audio.getBitRate() == 0 && (millis() - timeout < 200))
+            {
+                instance->audio.loop();
+                delay(1);
+            }
+
+            if (instance->audio.getBitRate() == 0 || instance->audio.getSampleRate() == 0)
+            {
+                instance->audio.stopSong();
+            }
+
+            Serial.println("--- Info Real del Archivo ---");
+            Serial.printf("Sample Rate detectado: %d Hz\n", instance->audio.getSampleRate());
+            Serial.printf("Bit Rate detectado: %d bps\n", instance->audio.getBitRate());
+        }
+
+        if (instance->audio.isRunning())
+        {
+            // Solo hace loop si el sampleRate es válido
+            if (instance->audio.getSampleRate() > 0)
+            {
+                instance->audio.loop();
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
+            else
+            {
+                Serial.println("⚠️ Warning: Sample rate inválido, omitiendo loop()");
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+        }
+        else
+        {
+            // Si no está corriendo, espera un poco
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
     }
 }
 
@@ -135,10 +211,23 @@ void VoiceService::play(BeepType beepType)
 
     char filePath[64];
 
-    // Ejemplo de mapeo de archivos en memoria interna (SPIFFS)
-    // Estructura: /v[voiceType]_m[messageType].mp3 -> /v0_m1.mp3
     snprintf(filePath, sizeof(filePath), "/%s.mp3", getBeepTypeeName(beepType));
 
+    _play(filePath);
+
+}
+
+void VoiceService::play(VoiceType voiceType, VoiceMessage messageType)
+{
+    char filePath[64];
+
+    snprintf(filePath, sizeof(filePath), "/%s/%s.mp3", getVoiceTypeName(voiceType), getVoiceMessageName(messageType));
+
+    _play(filePath);
+}
+
+void VoiceService::_play(const char *filePath)
+{
     // Verifica que el archivo exista antes de reproducir
     if (!SD_MMC.exists(filePath))
     {
@@ -146,34 +235,51 @@ void VoiceService::play(BeepType beepType)
         Serial.println("Cambia MP3_PATH por uno que esté en la raíz o carpeta correcta.");
         return;
     }
-    // Si usas SD, sería audio.connecttoFS(SD, filePath);
-    // Si usas memoria interna (SPIFFS/LittleFS):
-    bool success = audio.connecttoFS(SD_MMC, filePath);
-    if (success)
-    {
-        Serial.printf("Reproduciendo: %s\n", filePath);
-    }
     else
     {
-        Serial.printf("No se pudo reproducir: %s\n", filePath);
+        File testFile = SD_MMC.open(filePath);
+        size_t size = testFile.size();
+
+        uint8_t header[4];
+        testFile.read(header, 4);
+        testFile.close();
+
+        if (size == 0)
+        {
+            Serial.printf("Error: El archivo %s está vacío (0 bytes).\n", filePath);
+            return;
+        }
+        else
+        {
+            Serial.printf("Size %d del archivo %s.\n", size, filePath);
+        }
+
+        // ✅ Acepta tanto MP3 puro como MP3 con ID3
+        bool isValidMP3 = false;
+
+        // Verifica si empieza con ID3 tag (49 44 33 = "ID3")
+        if (header[0] == 0x49 && header[1] == 0x44 && header[2] == 0x33)
+        {
+            Serial.printf("MP3 con etiqueta ID3 detectada: %s\n", filePath);
+            isValidMP3 = true;
+        }
+        // Verifica si empieza con frame MP3 (0xFF 0xFx)
+        else if (header[0] == 0xFF && (header[1] & 0xE0) == 0xE0)
+        {
+            Serial.printf("MP3 puro detectado: %s\n", filePath);
+            isValidMP3 = true;
+        }
+
+        if (!isValidMP3)
+        {
+            Serial.printf("Error: %s no parece ser un MP3 válido\n", filePath);
+            Serial.printf("Header: %02X %02X %02X %02X\n", header[0], header[1], header[2], header[3]);
+            return;
+        }
+
+        xQueueSend(_queue, filePath, portMAX_DELAY);
     }
 }
-
-void VoiceService::play(VoiceType voiceType, VoiceMessage messageType)
-{
-    char filePath[64];
-
-    // Ejemplo de mapeo de archivos en memoria interna (SPIFFS)
-    // Estructura: /v[voiceType]_m[messageType].mp3 -> /v0_m1.mp3
-    snprintf(filePath, sizeof(filePath), "/%s/%s.mp3", getVoiceTypeName(voiceType), getVoiceMessageName(messageType));
-
-    Serial.printf("Reproduciendo: %s\n", filePath);
-
-    // Si usas SD, sería audio.connecttoFS(SD, filePath);
-    // Si usas memoria interna (SPIFFS/LittleFS):
-    audio.connecttoFS(SD_MMC, filePath);
-}
-
 void VoiceService::setVolume(uint8_t volume)
 {
     audio.setVolume(volume);
