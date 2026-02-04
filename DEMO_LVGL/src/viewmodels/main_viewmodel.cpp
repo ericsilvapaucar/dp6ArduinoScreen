@@ -5,7 +5,7 @@
 #include "../model/model.h"
 
 MainViewModel::MainViewModel(SerialService *serialService, BLEConnector *bleConnector, ButtonService *buttonService, VoiceService *voiceService)
-    : _serialService(serialService), _bleConnector(bleConnector), _buttonServices(buttonService), _voiceService(voiceService)
+    : _serialService(serialService), _bleConnector(bleConnector), _buttonServices(buttonService), _voiceService(voiceService),  _displayService(displayService)
 {
     _stateMutex = xSemaphoreCreateMutex();
 }
@@ -18,6 +18,8 @@ MainViewModel::~MainViewModel()
 void MainViewModel::bind(std::function<void(const MainUiState &)> observer)
 {
     _onStateChanged = observer;
+
+    _displayService->init();
 
     _serialService->setup([this](SerialEvent event)
                           { _handleRawSerial(event); });
@@ -173,6 +175,10 @@ void MainViewModel::_setProductList(const char totalAmount[], uint16_t totalItem
         memcpy(_uiState.productList.product, products, sizeof(Product) * totalItems);
 
         xSemaphoreGive(_stateMutex);
+
+        _displayService->showString(_uiState.productList.totalAmount);
+
+
         _notifyStateChanged();
     }
 }

@@ -26,6 +26,11 @@ void loop() {
         Serial.printf("RAM: %d KB libres (%.1f%% usado)\n", 
                       ESP.getFreeHeap() / 1024,
                       (1 - ESP.getFreeHeap() / (float)ESP.getHeapSize()) * 100);
+
+        Serial.printf("PSRAM: %d KB libres (%.1f%% usado)\n", 
+                      ESP.getFreePsram() / 1024,
+                      (1 - ESP.getFreePsram() / (float)ESP.getPsramSize()) * 100);
+
         lastCheck = millis();
     }
 
