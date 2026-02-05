@@ -15,6 +15,7 @@ void setup()
     init_app();
 
     Serial.println(title + " end");
+    Serial.println("Version 0.0.1");
 }
 
 void loop() {
