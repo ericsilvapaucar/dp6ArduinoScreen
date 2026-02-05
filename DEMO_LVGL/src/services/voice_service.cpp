@@ -153,14 +153,21 @@ void VoiceService::audioTask(void *pvParameters)
         if (xQueueReceive(instance->_queue, &nextFile, 0) == pdPASS)
         {
             Serial.printf("AudioTask: Intentando reproducir %s\n", nextFile);
+            if (instance->audio.isRunning()) {
+                instance->audio.stopSong();
+            }
 
+            if (!instance->_isValidAudioFile(nextFile)) {
+                vTaskDelay(pdMS_TO_TICKS(50));
+                continue;
+            }
             
-            instance->audio.stopSong();
             vTaskDelay(pdMS_TO_TICKS(50));
 
             if (!instance->audio.connecttoFS(SD_MMC, nextFile))
             {
                 Serial.printf("AudioTask: Error al conectar con %s\n", nextFile);
+                continue;
             }
 
             vTaskDelay(pdMS_TO_TICKS(50));
@@ -171,69 +178,84 @@ void VoiceService::audioTask(void *pvParameters)
             while (instance->audio.getBitRate() == 0 && (millis() - timeout < 200))
             {
                 instance->audio.loop();
-                delay(1);
+                vTaskDelay(pdMS_TO_TICKS(1));
             }
 
             if (instance->audio.getBitRate() == 0 || instance->audio.getSampleRate() == 0)
             {
                 instance->audio.stopSong();
+                continue;
             }
 
             Serial.println("--- Info Real del Archivo ---");
             Serial.printf("Sample Rate detectado: %d Hz\n", instance->audio.getSampleRate());
             Serial.printf("Bit Rate detectado: %d bps\n", instance->audio.getBitRate());
-        }
-
-        if (instance->audio.isRunning())
-        {
-            // Solo hace loop si el sampleRate es válido
-            if (instance->audio.getSampleRate() > 0)
+            
+            while (instance->audio.isRunning())
             {
+                Serial.printf("loop: %d\n", millis() - timeout);
                 instance->audio.loop();
+                
                 vTaskDelay(pdMS_TO_TICKS(1));
             }
-            else
-            {
-                Serial.println("⚠️ Warning: Sample rate inválido, omitiendo loop()");
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
+            
+            Serial.printf("Finish Audio: %s\n", nextFile);
+            
         }
-        else
-        {
-            // Si no está corriendo, espera un poco
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+        
     }
 }
 
 void VoiceService::play(BeepType beepType)
 {
 
+    if (!_queue) {
+        return;
+    }
+
     char filePath[64];
+    
+    Serial.printf("BeepType %d\n", beepType);
 
     snprintf(filePath, sizeof(filePath), "/%s.mp3", getBeepTypeeName(beepType));
 
-    _play(filePath);
+    if (xQueueSend(_queue, filePath, portMAX_DELAY) != pdPASS) 
+    {
+        Serial.println("Error: Cola de audio llena");
+    }
 
 }
 
 void VoiceService::play(VoiceType voiceType, VoiceMessage messageType)
 {
+
+    if (!_queue) {
+        return;
+    }
+
     char filePath[64];
+
+    Serial.printf("VoiceType %d, messageType: %d\n", voiceType, messageType);
 
     snprintf(filePath, sizeof(filePath), "/%s/%s.mp3", getVoiceTypeName(voiceType), getVoiceMessageName(messageType));
 
-    _play(filePath);
+    if (xQueueSend(_queue, filePath, portMAX_DELAY) != pdPASS) 
+    {
+        Serial.println("Error: Cola de audio llena");
+    }
 }
 
-void VoiceService::_play(const char *filePath)
+bool VoiceService::_isValidAudioFile(const char *filePath)
 {
+    Serial.printf("Archivo a reproducir: %s.\n", filePath);
     // Verifica que el archivo exista antes de reproducir
     if (!SD_MMC.exists(filePath))
     {
         Serial.printf("MP3 no existe: %s\n", filePath);
         Serial.println("Cambia MP3_PATH por uno que esté en la raíz o carpeta correcta.");
-        return;
+        return false;
     }
     else
     {
@@ -247,14 +269,14 @@ void VoiceService::_play(const char *filePath)
         if (size == 0)
         {
             Serial.printf("Error: El archivo %s está vacío (0 bytes).\n", filePath);
-            return;
+            return false;
         }
         else
         {
             Serial.printf("Size %d del archivo %s.\n", size, filePath);
         }
 
-        // ✅ Acepta tanto MP3 puro como MP3 con ID3
+        // Acepta tanto MP3 puro como MP3 con ID3
         bool isValidMP3 = false;
 
         // Verifica si empieza con ID3 tag (49 44 33 = "ID3")
@@ -274,12 +296,15 @@ void VoiceService::_play(const char *filePath)
         {
             Serial.printf("Error: %s no parece ser un MP3 válido\n", filePath);
             Serial.printf("Header: %02X %02X %02X %02X\n", header[0], header[1], header[2], header[3]);
-            return;
+            return false;
         }
 
-        xQueueSend(_queue, filePath, portMAX_DELAY);
+        Serial.printf("Encolando archivo: %s\n", filePath);
+        return true;
+    
     }
 }
+
 void VoiceService::setVolume(uint8_t volume)
 {
     audio.setVolume(volume);

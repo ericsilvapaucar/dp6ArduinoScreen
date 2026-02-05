@@ -36,7 +36,6 @@ void MainViewModel::bind(std::function<void(const MainUiState &)> observer)
                                        { _handleButtonEvent(type); });
 
     _voiceService->setup();
-    // _voiceService->play(BeepType::CONNECTED);
 }
 
 void MainViewModel::setConnectionState(ConnectionState state)
@@ -109,11 +108,6 @@ void MainViewModel::_notifyStateChanged()
 
 void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
 {
-    if (response.len == 0)
-    {
-        return;
-    }
-
     TypeMessage type = static_cast<TypeMessage>(response.type);
     Serial.printf("Type message: %d, size: %d\n", type, response.len);
     switch (type)

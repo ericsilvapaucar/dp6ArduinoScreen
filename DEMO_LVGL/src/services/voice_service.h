@@ -10,7 +10,7 @@ class VoiceService {
         Audio audio;
         SemaphoreHandle_t xMutex = xSemaphoreCreateMutex();
         static void audioTask(void *pvParameters); // Hilo dedicado al audio
-        void _play(const char filePath[]);
+        bool _isValidAudioFile(const char *filePath);
     public:
         ~VoiceService() {
             if (_taskHandle != nullptr) {

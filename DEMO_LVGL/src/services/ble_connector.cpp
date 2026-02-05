@@ -2,8 +2,12 @@
 
 void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
 {
+    
+    Serial.println(" BLEConnector::onWrite");
     uint8_t *packet = pCharacteristic->getData();
     size_t length = pCharacteristic->getLength();
+    
+    Serial.printf("PACKAGE SIZE: %d", length);
 
     if (length < 4)
     {
@@ -36,6 +40,7 @@ void BLEConnector::onWrite(BLECharacteristic *pCharacteristic)
         BluetoothResponse response;
 
         response.type = bufferGlobal[0];
+        Serial.printf("Response type: %d\n", bufferGlobal[0]);
         response.len = bytesRecibidos - 1;
         bytesRecibidos = 0;
 
