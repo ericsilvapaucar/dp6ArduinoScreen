@@ -173,8 +173,7 @@ void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
         break;
     }
     case TypeMessage::BEEP_MESSAGE: // Start Voice record
-        // _voiceService->play(BeepType::VOICE);
-        _voiceService->play(VoiceType::STANDARD, VoiceMessage::THANKS);
+        _voiceService->play(BeepType::VOICE);
         Serial.println("Beep!");
         break;
 
