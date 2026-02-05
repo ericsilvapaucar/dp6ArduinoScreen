@@ -7,20 +7,20 @@ enum class BeepType {
 };
 
 // Definición de los Enums tal cual los pediste
-enum class VoiceType {
-    STANDARD,
-    OLD,
-    FUNNY,
-    WOMAN
+enum class VoiceType : uint8_t {
+    STANDARD = 0x00,
+    OLD = 0x03,
+    FUNNY = 0x01,
+    WOMAN = 0x02
 };
 
-enum class VoiceMessage {
-    ERROR,
-    NO_STOCK,
-    PRODUCT_NOT_FOUND,
-    NO_PRICE,
-    INVALID,
-    THANKS
+enum class VoiceMessage : uint8_t{
+    ERROR = 0x00,
+    NO_STOCK = 0x01,
+    PRODUCT_NOT_FOUND = 0x02,
+    NO_PRICE = 0x03,
+    INVALID = 0x04,
+    THANKS = 0x05
 };
 
 

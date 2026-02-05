@@ -5,7 +5,7 @@
 #include "../model/model.h"
 
 MainViewModel::MainViewModel(SerialService *serialService, BLEConnector *bleConnector, ButtonService *buttonService, VoiceService *voiceService, DisplayService *displayService)
-    : _serialService(serialService), _bleConnector(bleConnector), _buttonServices(buttonService), _voiceService(voiceService),  _displayService(displayService)
+    : _serialService(serialService), _bleConnector(bleConnector), _buttonServices(buttonService), _voiceService(voiceService), _displayService(displayService)
 {
     _stateMutex = xSemaphoreCreateMutex();
 }
@@ -46,7 +46,8 @@ void MainViewModel::setConnectionState(ConnectionState state)
         _uiState.connectionState = state;
         xSemaphoreGive(_stateMutex);
         _notifyStateChanged();
-        if (state == CONNECTED) {
+        if (state == CONNECTED)
+        {
             _voiceService->play(BeepType::CONNECTED);
         }
     }
@@ -135,28 +136,50 @@ void MainViewModel::_handleBluetoothData(const BluetoothResponse &response)
         Serial.printf("Size Data: %d Header Size: %d, Body Size: %d, tSize: %d, Total Items: %d\n", response.len, headerSize, bodySize, tSize, totalItems);
         Serial.printf("total amount: %s\n", totalAmount);
 
-        for (int i = 0; i < totalItems; i++)
-        {
-            Serial.printf("(%d) Nombre: %s | Precio: %s | Cantidad: %s %s\n", i + 1, products[i].name, products[i].price, products[i].quantity, products[i].unitName);
-        }
-        Serial.flush();
         _setProductList(totalAmount, totalItems, products);
 
         break;
     }
     case TypeMessage::ERROR_MESSAGE:
+    {
+        uint8_t errorCode = response.data[0];
+        _setErrorCode(errorCode);
+        VoiceType voiceType = static_cast<VoiceType>(response.data[1]);
+        VoiceMessage voiceMessage;
+        switch (errorCode)
+        {
+        case 0x01:
+            voiceMessage = VoiceMessage::NO_STOCK;
+            break;
+        case 0x02:
+            voiceMessage = VoiceMessage::PRODUCT_NOT_FOUND;
+            break;
+        case 0x03:
+            voiceMessage = VoiceMessage::NO_PRICE;
+            break;
+        default:
+            voiceMessage = VoiceMessage::ERROR;
+            break;
+        }
 
-        _setErrorCode(response.data[0]);
+        _voiceService->play(voiceType, voiceMessage);
         sleep(2);
         _setErrorCode(0);
         break;
+    }
     case TypeMessage::SUCCESS_MESSAGE:
+    {
+
+        VoiceType voiceType = static_cast<VoiceType>(response.data[0]);
+        _voiceService->play(voiceType, VoiceMessage::THANKS);
+
         _setSuccess(true);
         sleep(2);
         _setSuccess(false);
         break;
-
-    case TypeMessage::BEEP_MESSAGE:
+    }
+    case TypeMessage::BEEP_MESSAGE: // Start Voice record
+        _voiceService->play(BeepType::VOICE);
         Serial.println("Beep!");
         break;
 
@@ -178,7 +201,6 @@ void MainViewModel::_setProductList(const char totalAmount[], uint16_t totalItem
         xSemaphoreGive(_stateMutex);
 
         _displayService->showString(_uiState.productList.totalAmount);
-
 
         _notifyStateChanged();
     }

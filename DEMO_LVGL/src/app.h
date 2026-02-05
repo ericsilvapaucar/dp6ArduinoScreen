@@ -57,9 +57,6 @@ extern "C"
 
                 //     /* Release the mutex */
                 bsp_display_unlock();
-
-                delay(10000);
-                voiceService.play(VoiceType::STANDARD, VoiceMessage::THANKS);
         }
 
 #ifdef __cplusplus
